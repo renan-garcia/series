@@ -1,27 +1,43 @@
-const USER_LOGIN = 'USER_LOGIN';
-const userLogin = user => ({
-  type: USER_LOGIN,
+import firebase from 'firebase';
+import { Alert } from 'react-native';
+
+
+export const USER_LOGIN_SUCCESS = 'USER_LOGIN_SUCCESS';
+const userLoginSuccess = user => ({
+  type: USER_LOGIN_SUCCESS,
   user
 });
 
-const USER_LOGOUT = 'USER_LOGOUT';
+export const USER_LOGOUT = 'USER_LOGOUT';
 const userLogout = () => ({
   type: USER_LOGOUT
 });
 
-export const tryLogin = ({ email, password }) => {
-  firebase
+export const tryLogin = ({
+  email,
+  password
+}) => dispatch => {
+  console.log('entrei');
+  console.log(email, password);
+  return firebase
     .auth()
     .signInWithEmailAndPassword(email, password)
-    .then(loginUserSuccess)
+    .then(user => {
+      const action = userLoginSuccess(user);
+      dispatch(action);
+      return user;
+    })
     .catch(error => {
-      if (error.code === 'auth/user-not-found') {
+      if (error.code != 'auth/user-not-found')
+        return Promise.reject(loginUserFailed(error));
+
+      return new Promise((resolve, reject) => {
         Alert.alert(
           'Usuário não encontrado',
           'Deseja criar um cadastro com as informações inseridas?',
           [{
             text: 'Não',
-            onPress: () => console.log('Usuário não quer criar conta'),
+            onPress: () => resolve(),
             style: 'cancel' // IOS
           }, {
             text: 'Sim',
@@ -29,15 +45,15 @@ export const tryLogin = ({ email, password }) => {
               firebase
                 .auth()
                 .createUserWithEmailAndPassword(email, password)
-                .then(loginUserSuccess)
-                .catch(loginUserFailed)
+                .then(user => resolve(user))
+                .catch(reject)
             }
-          }],
-          { cancelable: false }
+          }], {
+            cancelable: false
+          }
         )
-        return;
-      }
-      loginUserFailed(error);
-    })
-    .then(() => this.setState({ isLoading: false }));
+      });
+
+
+    });
 }
