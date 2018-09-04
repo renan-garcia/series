@@ -29,7 +29,7 @@ export const tryLogin = ({
     })
     .catch(error => {
       if (error.code != 'auth/user-not-found')
-        return Promise.reject(loginUserFailed(error));
+        return Promise.reject(error);
 
       return new Promise((resolve, reject) => {
         Alert.alert(
